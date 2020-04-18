@@ -6,17 +6,25 @@ __lua__
 
 rows = {}
 bw=10 --board width
-bh=14 --board height
+bh=10 --board height
 c={x=2,y=10} -- board top corner
 f={} -- falling piece
 
 function init_rows()
- for i=1,bw do
+ for i=0,bw do
   rows[i]={}
-  for j=1,bh do
+  for j=0,bh do
    rows[i][j]=0
   end
  end
+end
+
+function lock_f()
+ rows[f.x][f.y]=f.a
+ rows[f.x+1][f.y]=f.b
+ rows[f.x][f.y+1]=f.c
+ rows[f.x+1][f.y+1]=f.d
+ spawn_f()
 end
 
 function spawn_f()
@@ -28,7 +36,19 @@ function _init()
  spawn_f()
 end
 
+function check_collisions()
+ if (rows[f.x][f.y+1] == 0) then
+  return false
+ end
+ 
+ return true
+end
+
 function _update()
+ if (check_collisions()) then
+  --spawn_f()
+ end
+ 
  if (btnp(0)) then
   f.x-=1
   if (f.x < 1) then
@@ -40,6 +60,14 @@ function _update()
   f.x+=1
   if (f.x > bw-2) then
    f.x=bw-2
+  end
+ end
+ 
+ if (btnp(3)) then
+  f.y+=1
+  if (f.y > bh-3) then
+   f.y=bh-2
+   lock_f()
   end
  end
 end
@@ -56,15 +84,15 @@ function _draw()
 
  rect(c.x-1,c.y-1,(c.x)+(bw*8),(c.y)+(bh*8))
 		
-	for i=1,bw do
-	 for j=1,bh do
+	for i=0,bw do
+	 for j=0,bh do
    spr(rows[i][j],c.x+(i*8),c.y+(j*8))
   end
 	end
 	
 	draw_f()
 		
-	print("hello world")
+	print(f.x)
 end
 __gfx__
 00000000111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
