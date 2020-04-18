@@ -29,6 +29,19 @@ function _init()
 end
 
 function _update()
+ if (btnp(0)) then
+  f.x-=1
+  if (f.x < 1) then
+   f.x=0
+  end
+ end
+ 
+ if (btnp(1)) then
+  f.x+=1
+  if (f.x > bw-2) then
+   f.x=bw-2
+  end
+ end
 end
 
 function draw_f()
@@ -41,7 +54,7 @@ end
 function _draw()
 	cls()
 
- rect(c.x,c.y,(c.x)+(bw*8),(c.y)+(bh*8))
+ rect(c.x-1,c.y-1,(c.x)+(bw*8),(c.y)+(bh*8))
 		
 	for i=1,bw do
 	 for j=1,bh do
