@@ -9,39 +9,54 @@ bw=10 --board width
 bh=15 --board height
 c={x=2,y=5} -- board top corner
 f={} -- falling piece
+last=0
+counter=0
+test=100
 
 function init_rows()
  for i=0,bw do
   rows[i]={}
   for j=0,bh do
-   rows[i][j]=0
+   rows[i][j]={s=0,bst=time()}
   end
  end
 end
 
 function lock_f()
- rows[f.x][f.y]=f.a
- rows[f.x+1][f.y]=f.b
- rows[f.x][f.y+1]=f.c
- rows[f.x+1][f.y+1]=f.d
+ rows[f.x][f.y]=set_cell(f.a)
+ rows[f.x+1][f.y]=set_cell(f.b)
+ rows[f.x][f.y+1]=set_cell(f.c)
+ rows[f.x+1][f.y+1]=set_cell(f.d)
  spawn_f()
 end
 
+function set_cell(s)
+ 
+ return {s=s,bst=time(),fc=time()}  
+end
+
 function spawn_f()
- f={x=(bw/2)-1,y=1,a=1,b=2,c=3,d=4}
+ f={x=(bw/2)-1,y=1,a=1,b=1,c=1,d=5}
 end
 
 function _init()
  init_rows()
  spawn_f()
+ 
+ reset_time()
+end
+
+function reset_time()
+ last=time()
+ counter=0
 end
 
 function check_s_col()
- if (rows[f.x-1][f.y] != 0) then
+ if (rows[f.x-1][f.y].s != 0) then
   return true 
  end
  
- if (rows[f.x+3][f.y] != 0) then
+ if (rows[f.x+3][f.y].s != 0) then
   return true
  end
  
@@ -49,11 +64,11 @@ function check_s_col()
 end
 
 function check_l_col()
- if (rows[f.x][f.y+2] != 0) then
+ if (rows[f.x][f.y+2].s != 0) then
   return true
  end
  
- if (rows[f.x+1][f.y+2] != 0) then
+ if (rows[f.x+1][f.y+2].s != 0) then
   return true
  end
  
@@ -61,19 +76,19 @@ function check_l_col()
 end
 
 function check_n_f(nfx,nfy)
- if(rows[nfx][nfy] != 0) then
+ if(rows[nfx][nfy].s != 0) then
   return true
  end
  
- if(rows[nfx+1][nfy] != 0) then
+ if(rows[nfx+1][nfy].s != 0) then
   return true
  end
  
- if(rows[nfx][nfy+1] != 0) then
+ if(rows[nfx][nfy+1].s != 0) then
   return true
  end
  
- if(rows[nfx+1][nfy+1] != 0) then
+ if(rows[nfx+1][nfy+1].s != 0) then
   return true
  end
  
@@ -81,6 +96,8 @@ function check_n_f(nfx,nfy)
 end
 
 function _update()
+ counter=time()-last
+
  if (check_l_col()) then
   lock_f()
  end
@@ -98,6 +115,10 @@ function _update()
  
  if (btnp(3)) then
   nfy=f.y+1
+ elseif (counter > 1) then
+  nfy=f.y+1
+  reset_time()
+ else
  end
  
  if (nfx<0) then
@@ -115,7 +136,58 @@ function _update()
   f.x = nfx
   f.y = nfy
  else
+  
  end
+ 
+ process_rows()
+end
+
+function near_fire(i,j)
+ if(rows[i][j].s == 0)then
+  return false
+ end
+ 
+ --above
+ if(rows[i][j-1].s==5)then
+  return true
+ end
+ 
+ --right
+ if(rows[i+1][j].s==5)then
+  return true
+ end
+ 
+ --below
+ if(rows[i][j+1].s==5)then
+  return true
+ end
+ 
+ --left
+ if(i==0 or rows[i-1][j].s==5)then
+  return true
+ end
+ 
+ return false
+end
+
+function process_rows()
+ for i=0,bw do
+  for j=0,bh do
+   if(not near_fire(i,j))then
+    rows[i][j].fc=time()
+   end
+   
+   if(rows[i][j].s == 5) then
+    if ((time()-rows[i][j].bst) > 10) then
+     rows[i][j] = {s=0,bst=time()}
+    end
+   elseif(rows[i][j].s==1)then
+    if(time()-rows[i][j].fc>5)then
+     rows[i][j].s=5
+    end
+   end
+  end
+ end   
 end
 
 function draw_f()
@@ -132,7 +204,7 @@ function _draw()
 		
 	for i=0,bw do
 	 for j=0,bh do
-   spr(rows[i][j],c.x+(i*8),c.y+(j*8))
+   spr(rows[i][j].s,c.x+(i*8),c.y+(j*8))
   end
 	end
 	
@@ -140,17 +212,18 @@ function _draw()
 	
 	line(c.x,(c.y+(3*8)),c.x+(bw*8),(c.y+(3*8)))
 		
-	print(f.x)
+	print(last)
+	print(time()-rows[1][10].bst, 20,20)
 end
 __gfx__
-00000000111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000001cccccc114444441177777711aaaaaa10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000001cccccc114444441177777711aaaaaa10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000001cccccc114444441177777711aaaaaa10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000001cccccc114444441177777711aaaaaa10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000001cccccc114444441177777711aaaaaa10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000001cccccc114444441177777711aaaaaa10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000044444401111111111111111111111110008800000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001f44444414444441177777711aaaaaa10089980000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000fff5555514444441177777711aaaaaa10899998000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000fff4444414444441177777711aaaaaa18999a99800000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000fff5555514444441177777711aaaaaa1899aa99800000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000fff4444414444441177777711aaaaaa189aaaa9800000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001f55555514444441177777711aaaaaa1089aa98000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000011111101111111111111111111111110088880000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
