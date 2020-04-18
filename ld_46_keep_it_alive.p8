@@ -6,8 +6,8 @@ __lua__
 
 rows = {}
 bw=10 --board width
-bh=10 --board height
-c={x=2,y=10} -- board top corner
+bh=15 --board height
+c={x=2,y=5} -- board top corner
 f={} -- falling piece
 
 function init_rows()
@@ -28,7 +28,7 @@ function lock_f()
 end
 
 function spawn_f()
- f={x=1,y=1,a=1,b=2,c=3,d=4}
+ f={x=(bw/2)-1,y=1,a=1,b=2,c=3,d=4}
 end
 
 function _init()
@@ -36,39 +36,85 @@ function _init()
  spawn_f()
 end
 
-function check_collisions()
- if (rows[f.x][f.y+1] == 0) then
-  return false
+function check_s_col()
+ if (rows[f.x-1][f.y] != 0) then
+  return true 
  end
  
- return true
+ if (rows[f.x+3][f.y] != 0) then
+  return true
+ end
+ 
+ return false
+end
+
+function check_l_col()
+ if (rows[f.x][f.y+2] != 0) then
+  return true
+ end
+ 
+ if (rows[f.x+1][f.y+2] != 0) then
+  return true
+ end
+ 
+ return false
+end
+
+function check_n_f(nfx,nfy)
+ if(rows[nfx][nfy] != 0) then
+  return true
+ end
+ 
+ if(rows[nfx+1][nfy] != 0) then
+  return true
+ end
+ 
+ if(rows[nfx][nfy+1] != 0) then
+  return true
+ end
+ 
+ if(rows[nfx+1][nfy+1] != 0) then
+  return true
+ end
+ 
+ return false
 end
 
 function _update()
- if (check_collisions()) then
-  --spawn_f()
+ if (check_l_col()) then
+  lock_f()
  end
  
+ local nfx=f.x
+ local nfy=f.y
+ 
  if (btnp(0)) then
-  f.x-=1
-  if (f.x < 1) then
-   f.x=0
-  end
+  nfx = f.x - 1
  end
  
  if (btnp(1)) then
-  f.x+=1
-  if (f.x > bw-2) then
-   f.x=bw-2
-  end
+  nfx= f.x + 1
  end
  
  if (btnp(3)) then
-  f.y+=1
-  if (f.y > bh-3) then
-   f.y=bh-2
-   lock_f()
-  end
+  nfy=f.y+1
+ end
+ 
+ if (nfx<0) then
+  nfx = f.x
+ end
+ 
+ if (nfx>(bw-2)) then
+  nfx = f.x
+ end
+ 
+ if (nfy>bh-2) then
+  nfy = f.y
+  lock_f()
+ elseif (not check_n_f(nfx,nfy)) then
+  f.x = nfx
+  f.y = nfy
+ else
  end
 end
 
@@ -91,6 +137,8 @@ function _draw()
 	end
 	
 	draw_f()
+	
+	line(c.x,(c.y+(3*8)),c.x+(bw*8),(c.y+(3*8)))
 		
 	print(f.x)
 end
