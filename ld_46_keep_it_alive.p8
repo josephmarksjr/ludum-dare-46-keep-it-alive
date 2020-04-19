@@ -32,6 +32,17 @@ function init_rows()
  end
 end
 
+function spin()
+ local fta=f.a
+ local ftb=f.b
+ local ftc=f.c
+ local ftd=f.d
+ f.a=ftc
+ f.b=fta
+ f.c=ftd
+ f.d=ftb
+end
+
 function lock_f()
  rows[f.x][f.y]=set_cell(f.a)
  rows[f.x+1][f.y]=set_cell(f.b)
@@ -148,6 +159,10 @@ function _update()
 	  nfx= f.x + 1
 	 end
 	 
+	 if (btnp(2)) then
+	  spin()
+	 end
+	 
 	 if (btnp(3)) then
 	  nfy=f.y+1
 	 elseif (counter > 1) then
@@ -200,7 +215,7 @@ function near_fire(i,j)
  end
  
  --left
- if(i==0 or rows[i-1][j].t==5)then
+ if(i!=0 and rows[i-1][j].t==5)then
   return true
  end
  
