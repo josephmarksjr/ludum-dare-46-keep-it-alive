@@ -7,16 +7,16 @@ __lua__
 rows = {}
 bw=10 --board width
 bh=15 --board height
-c={x=2,y=5} -- board top corner
+c={x=4,y=4} -- board top corner
 f={} -- falling piece
 last=0
 counter=0
 test=1
-playing=false
+playing=true
 level=1
 score=0
 fs=2--fire strength
-go_msg="the fire has died"
+go_msg=""
 
 --map the spawn chances (out of 10)
 mp={1,1,2,3,2,2,2,1,3}
@@ -66,7 +66,7 @@ function _update()
 	 
 	 if (btnp(3)) then
 	  nfy=f.y+1
-	 elseif (counter > 1) then
+	 elseif (counter > 1-(level/10)+.2) then
 	  nfy=f.y+1
 	  reset_time()
 	 else
@@ -97,7 +97,7 @@ function _update()
 end
 
 function _draw()
-	cls()
+	cls(1)
 	
 	color(7)
 
@@ -118,10 +118,10 @@ function _draw()
 	 level,c.x+(bw*8)+4,c.y
 	)
 	
-	print("score",c.x+(bw*8)+4,c.y+8)
+	print("score:",c.x+(bw*8)+4,c.y+8)
 	print(score,c.x+(bw*8)+4,c.y+16)
 	
-	print("fire",c.x+(bw*8)+4,c.y+24)
+	print("fire size:",c.x+(bw*8)+4,c.y+24)
 	print(fs,c.x+(bw*8)+4,c.y+32)
 	
 	line(c.x,(c.y+(3*8)),c.x+(bw*8),(c.y+(3*8)))
