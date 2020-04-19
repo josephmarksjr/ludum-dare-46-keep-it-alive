@@ -14,98 +14,10 @@ counter=0
 test=1
 playing=true
 
-mp={
- 1,1,1,1,
- 2,2,
- 2,1,
- 5,5
-}
-
-function init_fire()
- ft={
-  t=5,s=17,bst=time(),fc=time()
- }
- fw={
-  t=2,s=2,bst=time(),fc=time()
- }
- fl={
-  t=1,s=1,bst=time(),fc=time()
- }
- rows[bw/2][bh-1]=ft
- rows[bw/2-1][bh-1]=ft
- rows[bw/2+1][bh-1]=fw
- rows[bw/2-2][bh-1]=fw
- rows[bw/2][bh-2]=fw
- rows[bw/2-1][bh-2]=fw
- rows[bw/2+2][bh-2]=fl
- rows[bw/2-3][bh-2]=fl
- rows[bw/2+1][bh-2]=fl
- rows[bw/2-2][bh-2]=fl
- rows[bw/2][bh-3]=fl
- rows[bw/2-1][bh-3]=fl
-end
-
-function init_rows()
- for i=0,bw do
-  rows[i]={}
-  for j=0,bh do
-   rows[i][j]={
-    t=0,s=0,bst=time(),fc=time()
-   }
-  end
- end
- 
- init_fire()
-end
-
-function spin()
- local fta=f.a
- local ftb=f.b
- local ftc=f.c
- local ftd=f.d
- f.a=ftc
- f.b=fta
- f.c=ftd
- f.d=ftb
-end
-
-function lock_f()
- rows[f.x][f.y]=set_cell(f.a)
- rows[f.x+1][f.y]=set_cell(f.b)
- rows[f.x][f.y+1]=set_cell(f.c)
- rows[f.x+1][f.y+1]=set_cell(f.d)
- 
- if(f.y<2)then
-  game_over()
-  test=1111
- end
- 
- spawn_f()
-end
-
-function set_cell(s)
- t=s
- 
- return {
-  t=t,
-  s=s,
-  bst=time(),
-  fc=time()
- }  
-end
-
-function spawn_f()
- f={
-  x=(bw/2)-1,y=1,
-  a=mp[flr(rnd(9))+1],
-  b=mp[flr(rnd(9))+1],
-  c=mp[flr(rnd(9))+1],
-  d=mp[flr(rnd(9))+1]
- }
-end
+--map the spawn chances (out of 10)
+mp={1,1,2,3,2,2,2,1,3}
 
 function _init()
-
  init_rows()
  spawn_f()
  
@@ -115,50 +27,6 @@ end
 function reset_time()
  last=time()
  counter=0
-end
-
-function check_s_col()
- if (rows[f.x-1][f.y].t != 0) then
-  return true 
- end
- 
- if (rows[f.x+3][f.y].t != 0) then
-  return true
- end
- 
- return false
-end
-
-function check_l_col()
- if (rows[f.x][f.y+2].t != 0) then
-  return true
- end
- 
- if (rows[f.x+1][f.y+2].t != 0) then
-  return true
- end
- 
- return false
-end
-
-function check_n_f(nfx,nfy)
- if(rows[nfx][nfy].t != 0) then
-  return true
- end
- 
- if(rows[nfx+1][nfy].t != 0) then
-  return true
- end
- 
- if(rows[nfx][nfy+1].t != 0) then
-  return true
- end
- 
- if(rows[nfx+1][nfy+1].t != 0) then
-  return true
- end
- 
- return false
 end
 
 function _update()
@@ -217,6 +85,236 @@ function _update()
  end
 end
 
+function _draw()
+	cls()
+
+ rect(c.x-1,c.y-1,(c.x)+(bw*8),(c.y)+(bh*8))
+		
+	for i=0,bw do
+	 for j=0,bh do
+   spr(rows[i][j].s,c.x+(i*8),c.y+(j*8))
+  end
+	end
+	
+	draw_f()
+	
+	line(c.x,(c.y+(3*8)),c.x+(bw*8),(c.y+(3*8)))
+		
+	if(not playing)then
+	 print("game over",32,32)
+	 print("press ⬆️ to play",32,42)
+	end
+end
+
+
+-->8
+function game_over()
+ playing=false
+ _init()
+end
+
+function spin()
+ local fta=f.a
+ local ftb=f.b
+ local ftc=f.c
+ local ftd=f.d
+ f.a=ftc
+ f.b=fta
+ f.c=ftd
+ f.d=ftb
+end
+
+--add the piece to rows
+function lock_f()
+ rows[f.x][f.y]=set_cell(f.a)
+ rows[f.x+1][f.y]=set_cell(f.b)
+ rows[f.x][f.y+1]=set_cell(f.c)
+ rows[f.x+1][f.y+1]=set_cell(f.d)
+ 
+ --if the piece is above the 
+ --line, game over
+ if(f.y<2)then
+  game_over()
+ end
+ 
+ spawn_f()
+end
+
+--helper to create a cell
+function set_cell(s)
+ t=s
+ 
+ return {
+  t=t,
+  s=s,
+  bst=time(),
+  fc=time()
+ }  
+end
+
+--spawn a new falling piece
+function spawn_f()
+ f={
+  x=(bw/2)-1,y=1,
+  a=mp[flr(rnd(9))+1],
+  b=mp[flr(rnd(9))+1],
+  c=mp[flr(rnd(9))+1],
+  d=mp[flr(rnd(9))+1]
+ }
+end
+
+--process all cells on the 
+--board
+function process_rows()
+ for i=0,bw do
+  for j=0,bh do
+   if(not near_fire(i,j))then
+    rows[i][j].fc=time()
+   end
+   
+   --process fire
+   if(rows[i][j].t==5) then
+    local tl=time()
+     -rows[i][j].bst
+    if(rows[i][j].bm)then
+     tl=tl+rows[i][j].bm
+    end
+    if (tl>12) then
+     rows[i][j] = {
+      t=0,s=0,bst=time()
+     }
+    elseif(tl<2)then
+     rows[i][j].s=18
+    elseif(tl<4)then
+     rows[i][j].s=19
+    elseif(tl<6)then
+     rows[i][j].s=20
+    else
+     rows[i][j].s=21
+    end
+    
+    if(rows[i][j-1].t==3)then
+     rows[i][j]=set_cell(3)
+    end
+   --process water
+   elseif(rows[i][j].t==3)then
+    local tl=time()
+     -rows[i][j].bst
+    if (tl>3) then
+     rows[i][j] = {
+      t=0,s=0,bst=time()
+     }
+    elseif(tl<1)then
+     rows[i][j].s=33
+    elseif(tl<2)then
+     rows[i][j].s=34
+    else
+     rows[i][j].s=35
+    end
+   --process logs
+   elseif(rows[i][j].t==1)then
+    if(time()-rows[i][j].fc>3)
+    then
+     rows[i][j].t=5
+     rows[i][j].s=17
+     rows[i][j].bm=0
+    end
+   elseif(rows[i][j].t==2)then
+    if(time()-rows[i][j].fc>2)
+    then
+     rows[i][j].t=5
+     rows[i][j].s=20
+     rows[i][j].bm=3
+    end
+   end
+  end
+ end   
+end
+
+--collapse any blank cells
+function collapse_rows()
+ for i=bw-1,0,-1 do
+  for j=bh-1,0,-1 do
+   if(j!=0 and rows[i][j].t==0)then
+    if(rows[i][j-1].t!=0)then
+     rows[i][j].s=rows[i][j-1].s
+     rows[i][j].t=rows[i][j-1].t
+     rows[i][j].fc=rows[i][j-1].fc
+     rows[i][j].bst=rows[i][j-1].bst
+     rows[i][j-1]=set_cell(0)
+    end
+   end
+  end
+ end
+end
+-->8
+--set up the starting fire
+function init_fire()
+ ft={
+  t=5,s=17,bst=time(),fc=time()
+ }
+ fw={
+  t=2,s=2,bst=time(),fc=time()
+ }
+ fl={
+  t=1,s=1,bst=time(),fc=time()
+ }
+ 
+ rows[bw/2][bh-1]=ft
+ rows[bw/2-1][bh-1]=ft
+ rows[bw/2+1][bh-1]=fw
+ rows[bw/2-2][bh-1]=fw
+ rows[bw/2][bh-2]=fw
+ rows[bw/2-1][bh-2]=fw
+ rows[bw/2+2][bh-2]=fl
+ rows[bw/2-3][bh-2]=fl
+ rows[bw/2+1][bh-2]=fl
+ rows[bw/2-2][bh-2]=fl
+ rows[bw/2][bh-3]=fl
+ rows[bw/2-1][bh-3]=fl
+end
+
+function init_rows()
+ for i=0,bw do
+  rows[i]={}
+  for j=0,bh do
+   rows[i][j]={
+    t=0,s=0,bst=time(),fc=time()
+   }
+  end
+ end
+ 
+ init_fire()
+end
+-->8
+--check side collisions
+function check_s_col()
+ if(rows[f.x-1][f.y].t != 0)then
+  return true 
+ end
+ 
+ if(rows[f.x+3][f.y].t != 0)then
+  return true
+ end
+ 
+ return false
+end
+
+--check lower collisions
+function check_l_col()
+ if(rows[f.x][f.y+2].t != 0)then
+  return true
+ end
+ 
+ if(rows[f.x+1][f.y+2].t != 0)then
+  return true
+ end
+ 
+ return false
+end
+
+--check if a piece is next 
+--to a fire
 function near_fire(i,j)
  if(rows[i][j].t==0)then
   return false
@@ -245,69 +343,28 @@ function near_fire(i,j)
  return false
 end
 
-function collapse_rows()
- for i=bw-1,0,-1 do
-  for j=bh-1,0,-1 do
-   if(j!=0 and rows[i][j].t==0)then
-    if(rows[i][j-1].t!=0)then
-     rows[i][j].s=rows[i][j-1].s
-     rows[i][j].t=rows[i][j-1].t
-     rows[i][j].fc=rows[i][j-1].fc
-     rows[i][j].bst=rows[i][j-1].bst
-     rows[i][j-1]=set_cell(0)
-    end
-   end
-  end
+--check the new pos of f
+function check_n_f(nfx,nfy)
+ if(rows[nfx][nfy].t != 0)then
+  return true
  end
+ 
+ if(rows[nfx+1][nfy].t != 0)then
+  return true
+ end
+ 
+ if(rows[nfx][nfy+1].t != 0)then
+  return true
+ end
+ 
+ if(rows[nfx+1][nfy+1].t != 0)then
+  return true
+ end
+ 
+ return false
 end
-
-function process_rows()
- for i=0,bw do
-  for j=0,bh do
-   if(not near_fire(i,j))then
-    rows[i][j].fc=time()
-   end
-   
-   --process fire
-   if(rows[i][j].t==5) then
-    local tl=time()
-     -rows[i][j].bst
-    if(rows[i][j].bm)then
-     tl=tl+rows[i][j].bm
-    end
-    if (tl>12) then
-     rows[i][j] = {
-      t=0,s=0,bst=time()
-     }
-    elseif(tl<2)then
-     rows[i][j].s=18
-    elseif(tl<4)then
-     rows[i][j].s=19
-    elseif(tl<6)then
-     rows[i][j].s=20
-    else
-     rows[i][j].s=21
-    end
-   --process logs
-   elseif(rows[i][j].t==1)then
-    if(time()-rows[i][j].fc>3)
-    then
-     rows[i][j].t=5
-     rows[i][j].s=17
-     rows[i][j].bm=0
-    end
-   elseif(rows[i][j].t==2)then
-    if(time()-rows[i][j].fc>2)
-    then
-     rows[i][j].t=5
-     rows[i][j].s=20
-     rows[i][j].bm=3
-    end
-   end
-  end
- end   
-end
-
+-->8
+--draw the falling piece
 function draw_f()
  spr(f.a,(c.x)+(f.x*8),(c.y)+f.y*8)
  spr(f.b,(c.x)+(f.x+1)*8,(c.y)+f.y*8)
@@ -315,35 +372,7 @@ function draw_f()
  spr(f.d,(c.x)+(f.x+1)*8,(c.y)+(f.y+1)*8)
 end
 
-function _draw()
-	cls()
-
- rect(c.x-1,c.y-1,(c.x)+(bw*8),(c.y)+(bh*8))
-		
-	for i=0,bw do
-	 for j=0,bh do
-   spr(rows[i][j].s,c.x+(i*8),c.y+(j*8))
-  end
-	end
-	
-	draw_f()
-	
-	line(c.x,(c.y+(3*8)),c.x+(bw*8),(c.y+(3*8)))
-		
-	if(not playing)then
-	 print("game over",32,32)
-	 print("press ⬆️ to play",32,42)
-	end
-	
-	--print(test)
-	--print(time()-rows[1][10].bst, 20,20)
-end
-
-function game_over()
- playing=false
- _init()
-end
--->8
+--gameover update function
 function gameover_u()
  if (btnp(2)) then
   playing=true
@@ -351,14 +380,14 @@ function gameover_u()
  end
 end
 __gfx__
-0000000004444440440000ff00000c00707070700008800000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000001f444444544004ff0000cc00000000000089980000000000000000000000000000000000000000000000000000666000006006000066660000000000
-00000000fff5555505114450000ccc00000000070899998000000000000000000000000000000000000000000066600000006600006006000060000000000000
-00000000fff444440014450000cccc00700000008999a99800000000000000000000000000000000000600000000600000066600006666000066660000000000
-00000000fff55555004451000cccccc000000007899aa99800000000000000000000000000000000000600000066600000666000000006600060060000000000
-00000000fff4444404451140cc7ccccc7000000089aaaa9800000000000000000000000000000000000600000666660000006600000006000000060000000000
-000000001f555555445005ffcc7ccccc00000007089aa98000000000000000000000000000000000000000000000066000666600000006000006600000000000
-0000000001111110450000ff0cccccc0070707000088880000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000004444440440000ff00000c00011111100008800000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001f444444544004ff0000cc0014444f410089980000000000000000000000000000000000000000000000000000666000006006000066660000000000
+00000000fff5555505114450000ccc0014f444410899998000000000000000000000000000000000000000000066600000006600006006000060000000000000
+00000000fff444440014450000cccc00144444418999a99800000000000000000000000000000000000600000000600000066600006666000066660000000000
+00000000fff55555004451000cccccc014444441899aa99800000000000000000000000000000000000600000066600000666000000006600060060000000000
+00000000fff4444404451140cc7ccccc14444f4189aaaa9800000000000000000000000000000000000600000666660000006600000006000000060000000000
+000000001f555555445005ffcc7ccccc14f44441089aa98000000000000000000000000000000000000000000000066000666600000006000006600000000000
+0000000001111110450000ff0cccccc0011111100088880000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000880000008800000088000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000008998000089980000099000000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000089999800899998000999900008188000000900000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -367,14 +396,14 @@ __gfx__
 0000000089a1a19809a1a19009a1aa90009aa90000aaaa0000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000089aa980089aa980089aa980000aa000000aa00000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000008888000088880000888800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000440000ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000544004ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000051144500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000001445000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000004451000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000044511400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000445005ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000450000ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000c000000000000000000440000ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000cc000000c00000000000544004ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000ccc000000c00000000000051144500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000cccc00000cc0000000c000001445000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000cccccc000cccc00000cc000004451000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000cc7ccccc0c7cccc000cccc00044511400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000cc7ccccc0c7cccc000c7cc00445005ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000cccccc000cccc00000cc000450000ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
